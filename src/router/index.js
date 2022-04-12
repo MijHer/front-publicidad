@@ -1,11 +1,34 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import store from '../store/index.js'
 import HomeView from '../views/HomeView.vue'
+import App from '../App.vue'
+import LoginView from '../views/auth/LoginView.vue'
+import CategoriaView from '../views/admin/categoria/CategoriaView.vue'
+import PublicacionView from '../views/admin/publicacion/PublicacionView.vue'
 
 const routes = [
   {
-    path: '/',
-    name: 'home',
-    component: HomeView
+    path: '/admin',
+    name: 'Admin',
+    component: App,
+    meta: {requireAuth: true},
+    children: [
+      {
+        path: 'categoria',
+        name: 'Categoria',
+        component: CategoriaView
+      },
+      {
+        path: 'publicacion',
+        name: 'Publicacion',
+        component: PublicacionView
+      }      
+    ]
+  },
+  {
+    path: '/ingresar',
+    name: 'Login',
+    component: LoginView
   },
   {
     path: '/about',
@@ -21,5 +44,17 @@ const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  if(to.meta.requireAuth)
+  {
+    if(store.getters.estaAutenticado != null)
+    {
+      next()
+    }
+    next("/ingresar")
+  }
+ next()
+});
 
 export default router
