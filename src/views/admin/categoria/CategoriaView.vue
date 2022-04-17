@@ -101,7 +101,7 @@ export default {
     confirmDeleteCategoria(data) { 
       this.cargando = true;     
       this.$confirm.require({
-          message: 'Esta seguro de eliminar la categoria',
+          message: 'Esta seguro de eliminar '+data.nombre,
           header: 'Eliminar',
           icon: 'pi pi-exclamation-triangle',
           accept: async () => {

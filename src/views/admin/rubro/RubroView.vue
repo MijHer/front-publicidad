@@ -109,7 +109,7 @@ export default {
     confirmDeleteProduct(data) {
       this.cargando = true;
       this.$confirm.require({
-        message: 'Esta seguro que desea eliminar Rubro',
+        message: 'Esta seguro que desea eliminar '+data.nombre,
         header: 'Eliminar',
         icon: 'pi pi-exclamation-triangle',
         acceptClass: 'p-button-danger',

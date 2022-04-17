@@ -5,8 +5,8 @@ import App from '../App.vue'
 import LoginView from '../views/auth/LoginView.vue'
 import CategoriaView from '../views/admin/categoria/CategoriaView.vue'
 import PublicacionView from '../views/admin/publicacion/PublicacionView.vue'
-import RubroView from '../views/admin/rubro/Rubro.View.vue'
-
+import RubroView from '../views/admin/rubro/RubroView.vue'
+import EmpresaView from '../views/admin/empresa/EmpresaView.vue'
 const routes = [
   {
     path: '/admin',
@@ -28,7 +28,12 @@ const routes = [
         path: 'rubro',
         name: 'Rubro',
         component: RubroView
-      }      
+      },
+      {
+        path: 'empresa',
+        name: 'Empresa',
+        component: EmpresaView
+      }
     ]
   },
   {
