@@ -43,7 +43,7 @@
         <div class="formgrid grid"> 
           <div class="field col">
             <label for="inventoryStatus" class="mb-3">Nivel</label>
-            <Dropdown id="inventoryStatus" v-model="publicacion.nivel" :options="niveles" optionLabel="Nivel" placeholder="Seleciona el nivel">
+            <Dropdown id="inventoryStatus" v-model="publicacion.nivel" :options="niveles" optionLabel="label" optionValue="value" placeholder="Seleciona el nivel">
               <template #value="slotProps">
                 <div v-if="slotProps.value && slotProps.value.value">
                   <span :class="'product-badge status-' +slotProps.value.value">{{slotProps.value.label}}</span>
@@ -58,30 +58,30 @@
             </Dropdown>
           </div>
           <div class="field col">
-            <label for="inventoryStatus" class="mb-3">categoria</label>
-            <Dropdown id="inventoryStatus" v-model="publicacion.categoria_id" :options="niveles" optionLabel="Nivel" placeholder="Seleciona el nivel">
-              <template #value="slotProps">
-                <div v-if="slotProps.value && slotProps.value.value">
-                  <span :class="'product-badge status-' +slotProps.value.value">{{slotProps.value.label}}</span>
-                </div>
-                <div v-else-if="slotProps.value && !slotProps.value.value">
-                  <span :class="'product-badge status-' +slotProps.value.toLowerCase()">{{slotProps.value}}</span>
-                </div>
-                <span v-else>
-                  {{slotProps.placeholder}}
-                </span>
-              </template>
-            </Dropdown>
+            <label for="inventoryStatus" class="mb-3">Categoria</label>
+            <Dropdown id="inventoryStatus" v-model="publicacion.categoria_id" :options="categorias" optionLabel="nombre" optionValue="id" placeholder="Seleciona la categoria">              
+            </Dropdown>         
           </div>
         </div>
-
+        <div class="formgrid grid">
+          <div class="field col">
+            <label for="inventoryStatus" class="mb-3">Empresa</label>
+            <Dropdown id="inventoryStatus" v-model="publicacion.empresa_id" :options="empresas" optionLabel="nombre" optionValue="id" placeholder="Seleciona la categoria">              
+            </Dropdown>         
+          </div>
+          <div class="field col">
+            <label for="inventoryStatus" class="mb-3">Responsable</label>
+            <Dropdown id="inventoryStatus" v-model="publicacion.persona_id" :options="personas" optionLabel="nombres" optionValue="id" placeholder="Responsable de publicacion">              
+            </Dropdown>         
+          </div>
+        </div>
         <div class="field">
             <label for="descripcion">Descripcion</label>
-            <Textarea id="descripcion" v-model="publicacion.descripcion" required="false" rows="3" cols="20" />
+            <Textarea id="descripcion" v-model="publicacion.descripcion" required="false" rows="2" cols="20" />
         </div>
         <div class="field">
             <label for="requerimientos">Requerimientos</label>
-            <Textarea id="requerimientos" v-model="publicacion.requerimientos" required="false" rows="3" cols="20" />
+            <Textarea id="requerimientos" v-model="publicacion.requerimientos" required="false" rows="2" cols="20" />
         </div>
       <div class="formgrid grid">
           <div class="field col">
@@ -92,21 +92,29 @@
               <label for="ubicacion">Ubicacion</label>
               <InputText id="ubicacion" v-model.trim="publicacion.ubicacion" required="true" autofocus :class="{'p-invalid': submitted && !publicacion.ubicacion}" />
               <small class="p-error" v-if="submitted && !publicacion.ubicacion">Ubicacion es requerido.</small>
-          </div>          
+          </div>
+          <div class="field col">
+              <label for="estado">Estado</label>
+              <InputText id="estado" v-model.trim="publicacion.estado" required="true" autofocus :class="{'p-invalid': submitted && !publicacion.ubicacion}" />
+              <small class="p-error" v-if="submitted && !publicacion.ubicacion">Estado es requerido.</small>
+          </div>
+          {{publicacion}}          
       </div>
       <template #footer>
-          <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="hideDialog"/>
-          <Button label="Guardar" icon="pi pi-check" class="p-button-text" @click="saveProduct" />
-      </template>
+          <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="cerrarDialog"/>
+          <Button label="Guardar" icon="pi pi-check" class="p-button-text" @click="guardarPublicacion" />
+      </template>      
     </Dialog>
-
   </div>
+  {{publicaciones}}
 </div>
-{{publicaciones}}
 </template>
 
 <script>
-import * as publicacionService from '../../../services/publicacion.service'
+import * as publicacionService from '../../../services/publicacion.service';
+import * as categoriaService from '../../../services/categoria.service';
+import * as empresaService from '../../../services/empresa.service';
+import * as personaService from '../../../services/persona.service';
 
 export default {
   data() {
@@ -119,7 +127,10 @@ export default {
 				{label: 'JUNIOR', value: 'junior'},
 				{label: 'SENIOR', value: 'senior'},
 				{label: 'MANAGER', value: 'manager'}
-      ]
+      ],
+      categorias: {},
+      empresas: {},
+      personas: {}
     }
   },
   mounted() {
@@ -128,12 +139,27 @@ export default {
   methods: {
     async listaPublicaciones() {
       const { data } = await publicacionService.listarPublicaciones();
-      this.publicaciones = data;      
+      this.publicaciones = data;
+      const cat = await categoriaService.listarCategorias();
+      this.categorias = cat.data;
+      const emp = await empresaService.listarEmpresas();
+      this.empresas = emp.data;
+      const per = await personaService.listarPersonas();
+      this.personas = per.data;
+      
     },
     abrirDialog() {
       this.publicacion = {};
       this.submitted = false;
       this.publicacionDialog = true;
+    },
+    cerrarDialog() {
+      this.publicacionDialog = false;
+      this.submitted = false;
+    },
+    async guardarPublicacion() {
+      const {data} = await publicacionService.guardarPublicaciones(this.publicacion);
+      this.publicacion = data;
     }
   },
 }
