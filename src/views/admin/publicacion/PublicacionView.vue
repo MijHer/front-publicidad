@@ -1,6 +1,8 @@
 <template>
 <div>
   <div class="card">
+    <Toast />
+      <ConfirmDialog></ConfirmDialog>
     <Toolbar class="mb-4">
       <template #start>
           <Button label="Nueva Publicacion" icon="pi pi-plus" class="p-button-success mr-2" @click="abrirDialog" />
@@ -11,6 +13,40 @@
           <Button label="Exportar" icon="pi pi-upload" class="p-button-help" @click="exportCSV($event)"  />
       </template>
     </Toolbar>
+
+    <DataTable ref="dt" :value="publicaciones" v-model:selection="selectedPublicaciones" dataKey="id" 
+        :paginator="true" :rows="10" :filters="filters"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown" :rowsPerPageOptions="[5,10,25]"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products" responsiveLayout="scroll">
+        <template #header>
+            <div class="table-header flex flex-column md:flex-row md:justiify-content-between">
+              <h5 class="mb-2 md:m-0 p-as-md-center">Gestion de publicaciones</h5>
+              <span class="p-input-icon-left">
+                  <i class="pi pi-search" />
+                  <InputText v-model="filters['global'].value" placeholder="Search..." />
+              </span>
+            </div>
+        </template>
+
+        <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
+        <Column field="titulo" header="Nombre" :sortable="true" style="min-width:16rem"></Column>
+        <Column field="tipo" header="Tiempo" :sortable="true" style="min-width:16rem"></Column>
+
+        <Column field="nivel" header="Nivel" :sortable="true" style="min-width:16rem"></Column>
+        <Column field="descripcion" header="Descripcion" :sortable="true" style="min-width:16rem"></Column>
+        <Column field="requerimientos" header="Requerimientos" :sortable="true" style="min-width:16rem"></Column>
+        <Column field="salario" header="Sueldo" :sortable="true" style="min-width:16rem"></Column>
+        <Column field="ubicacion" header="Lugar" :sortable="true" style="min-width:16rem"></Column>
+        <Column field="empresa.nombre" header="Empresa" :sortable="true" style="min-width:16rem"></Column>
+        <Column field="categoria.nombre" header="Categoria" :sortable="true" style="min-width:16rem"></Column>
+        <!-- <Column field="persona_id" header="responsable" :sortable="true" style="min-width:16rem"></Column>        -->
+        <Column :exportable="false" style="min-width:8rem">
+          <template #body="slotProps">
+            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editPublicacion(slotProps.data)" />
+            <Button icon="pi pi-trash" class="p-button-rounded p-button-warning" @click="confirmDeletePublicacion(slotProps.data)" />
+          </template>
+        </Column>    
+    </DataTable>
 
     <Dialog v-model:visible="publicacionDialog" :style="{width: '650px'}" header="Nueva Publicacion" :modal="true" class="p-fluid">
         <!-- <img src="https://www.primefaces.org/wp-content/uploads/2020/05/placeholder.png" :alt="product.image" class="product-image" v-if="product.image" /> -->
@@ -98,7 +134,6 @@
               <InputText id="estado" v-model.trim="publicacion.estado" required="true" autofocus :class="{'p-invalid': submitted && !publicacion.ubicacion}" />
               <small class="p-error" v-if="submitted && !publicacion.ubicacion">Estado es requerido.</small>
           </div>
-          {{publicacion}}          
       </div>
       <template #footer>
           <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="cerrarDialog"/>
@@ -111,6 +146,7 @@
 </template>
 
 <script>
+import { FilterMatchMode } from 'primevue/api';
 import * as publicacionService from '../../../services/publicacion.service';
 import * as categoriaService from '../../../services/categoria.service';
 import * as empresaService from '../../../services/empresa.service';
@@ -122,6 +158,8 @@ export default {
       publicaciones: null,
       publicacionDialog: false,
       publicacion: {},
+      selectedPublicaciones: null,
+      filters:{},
       submitted: false,
       niveles: [
 				{label: 'JUNIOR', value: 'junior'},
@@ -130,16 +168,21 @@ export default {
       ],
       categorias: {},
       empresas: {},
-      personas: {}
-    }
+      personas: {},
+      estadoEdicion: false
+    }    
+  },   
+  created() {     
+    this.initFilters();
   },
   mounted() {
     this.listaPublicaciones();
+    
   },
   methods: {
     async listaPublicaciones() {
       const { data } = await publicacionService.listarPublicaciones();
-      this.publicaciones = data;
+      this.publicaciones = data.data;
       const cat = await categoriaService.listarCategorias();
       this.categorias = cat.data;
       const emp = await empresaService.listarEmpresas();
@@ -158,8 +201,47 @@ export default {
       this.submitted = false;
     },
     async guardarPublicacion() {
-      const {data} = await publicacionService.guardarPublicaciones(this.publicacion);
-      this.publicacion = data;
+      let datos;
+      if (this.estadoEdicion) {
+        datos = await publicacionService.modificarPublicaciones(this.publicacion.id, this.publicacion);
+        this.publicacion = datos;
+      } else {
+        datos = await publicacionService.guardarPublicaciones(this.publicacion);
+        this.publicacion = datos;
+      }
+      this.cerrarDialog();
+      this.listaPublicaciones();
+      
+    },
+    editPublicacion(data) {
+      this.publicacion = data;           
+      this.estadoEdicion = true;      
+      this.publicacionDialog = true;
+    },
+    confirmDeletePublicacion(data) {
+      this.$confirm.require({
+        message: 'Esta seguro que desea eliminar ',
+        header: 'Eliminar',
+        icon: 'pi pi-info-circle',
+        acceptClass: 'p-button-danger',
+        accept: async () => {
+          data = await publicacionService.eliminarPublicaciones(data.id)
+          this.$toast.add({severity:'info', summary:'Eliminado', detail:'Aceptaste Eliminar', life: 3000});
+          this.listaPublicaciones();
+        },
+        reject: () => {
+          this.$toast.add({severity:'error', summary:'Cancelado', detail:'Aceptaste Cancelar', life: 3000});
+        }      
+      });
+    },
+    /* confirmDeletePublicacion(data) {
+      this.publicacion = publicacionService.eliminarPublicaciones(data.id);
+      this.listaPublicaciones();
+    }, */
+    initFilters() {
+      this.filters = {
+          'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
+      }
     }
   },
 }
